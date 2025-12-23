@@ -1,6 +1,12 @@
 let tooltip = null;
 let isTranslating = false;
 
+// Cache va rate limiting
+const translationCache = new Map();
+const MAX_CACHE_SIZE = 100; // Maksimal cache hajmi
+const RATE_LIMIT_DELAY = 1000; // 1 soniyada 1 so'rov
+let lastRequestTime = 0;
+
 function hideTooltip() {
   if (tooltip) {
     tooltip.remove();
@@ -23,7 +29,26 @@ function debounce(func, delay) {
 
 async function translateText(text, targetLang) {
   if (isTranslating) return null;
+
+  // Cache'dan tekshirish
+  const cacheKey = `${text}_${targetLang}`;
+  if (translationCache.has(cacheKey)) {
+    return translationCache.get(cacheKey);
+  }
+
+  // Rate limiting
+  const now = Date.now();
+  const timeSinceLastRequest = now - lastRequestTime;
+
+  if (timeSinceLastRequest < RATE_LIMIT_DELAY) {
+    // Agar juda tez so'rov bo'lsa, kutish
+    await new Promise((resolve) =>
+      setTimeout(resolve, RATE_LIMIT_DELAY - timeSinceLastRequest)
+    );
+  }
+
   isTranslating = true;
+  lastRequestTime = Date.now();
 
   try {
     const response = await fetch(
@@ -38,9 +63,29 @@ async function translateText(text, targetLang) {
       }
     );
 
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    if (!response.ok) {
+      if (response.status === 429) {
+        // Rate limit xatosi
+        console.warn("Tarjima limitiga yetildi, biroz kutib turing...");
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        isTranslating = false;
+        return "Tarjima limitiga yetildi, biroz kutib turing...";
+      }
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
     const data = await response.json();
-    return data?.[0]?.[0]?.[0] || "Tarjima topilmadi";
+    const translated = data?.[0]?.[0]?.[0] || "Tarjima topilmadi";
+
+    // Cache'ga saqlash
+    if (translationCache.size >= MAX_CACHE_SIZE) {
+      // Eski cache'ni tozalash (FIFO)
+      const firstKey = translationCache.keys().next().value;
+      translationCache.delete(firstKey);
+    }
+    translationCache.set(cacheKey, translated);
+
+    return translated;
   } catch (error) {
     console.error("Tarjima xatosi:", error);
     return "Tarjima xatosi yuz berdi";
