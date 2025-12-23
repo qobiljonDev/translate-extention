@@ -49,6 +49,51 @@ async function translateText(text, targetLang) {
   }
 }
 
+function speakText(text, lang = "auto") {
+  if (!("speechSynthesis" in window)) {
+    console.warn("Ovoz orqali o'qish qo'llab-quvvatlanmaydi");
+    return;
+  }
+
+  // Avval to'xtatish
+  window.speechSynthesis.cancel();
+
+  const utterance = new SpeechSynthesisUtterance(text);
+
+  // Til kodini sozlash
+  const langMap = {
+    uz: "uz-UZ",
+    en: "en-US",
+    ru: "ru-RU",
+    tr: "tr-TR",
+    ar: "ar-SA",
+    fr: "fr-FR",
+    auto: "en-US", // Avtomatik til aniqlash uchun default
+  };
+
+  utterance.lang = langMap[lang] || langMap["en"];
+  utterance.rate = 0.9;
+  utterance.pitch = 1;
+  utterance.volume = 1;
+
+  window.speechSynthesis.speak(utterance);
+}
+
+// Asl matnning tilini aniqlash funksiyasi
+async function detectLanguage(text) {
+  try {
+    const response = await fetch(
+      `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${encodeURIComponent(
+        text.slice(0, 100)
+      )}`
+    );
+    const data = await response.json();
+    return data[2] || "en"; // Google Translate API til kodini qaytaradi
+  } catch {
+    return "en"; // Xatolik bo'lsa default ingliz tili
+  }
+}
+
 function showTooltip(x, y, text, originalText) {
   hideTooltip();
 
@@ -70,8 +115,7 @@ function showTooltip(x, y, text, originalText) {
     boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
     backdropFilter: "blur(10px)",
     display: "flex",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
+    flexDirection: "column",
     gap: "12px",
     pointerEvents: "auto",
     cursor: "default",
@@ -96,33 +140,136 @@ function showTooltip(x, y, text, originalText) {
   originalTextEl.style.opacity = "0.7";
   originalTextEl.style.fontStyle = "italic";
 
+  const playOriginalBtn = document.createElement("button");
+  playOriginalBtn.innerHTML = `
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" fill="currentColor"/>
+    </svg>
+  `;
+  playOriginalBtn.title = "Asl matnni ovoz orqali o'qish";
+  Object.assign(playOriginalBtn.style, {
+    background: "rgba(255,255,255,0.1)",
+    border: "none",
+    color: "#fff",
+    cursor: "pointer",
+    borderRadius: "50%",
+    width: "32px",
+    height: "32px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    transition: "all 0.2s ease",
+    padding: "0",
+  });
+
+  playOriginalBtn.addEventListener("mouseenter", () => {
+    playOriginalBtn.style.background = "rgba(255,255,255,0.2)";
+    playOriginalBtn.style.transform = "scale(1.1)";
+  });
+
+  playOriginalBtn.addEventListener("mouseleave", () => {
+    playOriginalBtn.style.background = "rgba(255,255,255,0.1)";
+    playOriginalBtn.style.transform = "scale(1)";
+  });
+
+  playOriginalBtn.addEventListener("click", async (e) => {
+    e.stopPropagation();
+    const detectedLang = await detectLanguage(originalText);
+    speakText(originalText, detectedLang);
+  });
+
+  const playTranslatedBtn = document.createElement("button");
+  playTranslatedBtn.innerHTML = `
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z" fill="currentColor"/>
+      <path d="M15.5 12L9.5 8v8l6-4z" fill="currentColor" opacity="0.3"/>
+    </svg>
+  `;
+  playTranslatedBtn.title = "Tarjima qilingan matnni ovoz orqali o'qish";
+  Object.assign(playTranslatedBtn.style, {
+    background: "rgba(76, 175, 80, 0.3)",
+    border: "none",
+    color: "#fff",
+    cursor: "pointer",
+    borderRadius: "50%",
+    width: "32px",
+    height: "32px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    transition: "all 0.2s ease",
+    padding: "0",
+  });
+
+  playTranslatedBtn.addEventListener("mouseenter", () => {
+    playTranslatedBtn.style.background = "rgba(76, 175, 80, 0.5)";
+    playTranslatedBtn.style.transform = "scale(1.1)";
+  });
+
+  playTranslatedBtn.addEventListener("mouseleave", () => {
+    playTranslatedBtn.style.background = "rgba(76, 175, 80, 0.3)";
+    playTranslatedBtn.style.transform = "scale(1)";
+  });
+
+  playTranslatedBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const targetLang = localStorage.getItem("targetLang") || "uz";
+    speakText(text, targetLang);
+  });
+
   const closeBtn = document.createElement("button");
-  closeBtn.innerHTML = "&times;";
+  closeBtn.innerHTML = `
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill="currentColor"/>
+    </svg>
+  `;
+  closeBtn.title = "Yopish";
   Object.assign(closeBtn.style, {
     background: "rgba(255,255,255,0.1)",
     border: "none",
     color: "#fff",
     cursor: "pointer",
-    fontWeight: "bold",
-    fontSize: "18px",
     borderRadius: "50%",
-    width: "24px",
-    height: "24px",
-    lineHeight: "1",
+    width: "28px",
+    height: "28px",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
+    transition: "all 0.2s ease",
+    padding: "0",
+  });
+
+  closeBtn.addEventListener("mouseenter", () => {
+    closeBtn.style.background = "rgba(244, 67, 54, 0.3)";
+    closeBtn.style.transform = "scale(1.1)";
+  });
+
+  closeBtn.addEventListener("mouseleave", () => {
+    closeBtn.style.background = "rgba(255,255,255,0.1)";
+    closeBtn.style.transform = "scale(1)";
   });
 
   closeBtn.addEventListener("click", (e) => {
     e.stopPropagation();
+    window.speechSynthesis.cancel();
     hideTooltip();
   });
+
+  const buttonContainer = document.createElement("div");
+  buttonContainer.style.display = "flex";
+  buttonContainer.style.flexDirection = "row";
+  buttonContainer.style.gap = "8px";
+  buttonContainer.style.justifyContent = "center";
+  buttonContainer.style.alignItems = "center";
+  buttonContainer.style.marginTop = "4px";
+  buttonContainer.appendChild(playOriginalBtn);
+  buttonContainer.appendChild(playTranslatedBtn);
+  buttonContainer.appendChild(closeBtn);
 
   textContainer.appendChild(translatedText);
   textContainer.appendChild(originalTextEl);
   tooltip.appendChild(textContainer);
-  tooltip.appendChild(closeBtn);
+  tooltip.appendChild(buttonContainer);
   document.body.appendChild(tooltip);
 
   // Add style tag once
@@ -171,14 +318,13 @@ const handleSelection = debounce(async (event) => {
 
 document.addEventListener("mouseup", handleSelection);
 
-// ✅ ESC tugmasi bilan yopish
 window.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
+    window.speechSynthesis.cancel();
     hideTooltip();
   }
 });
 
-// ✅ Scroll qilinsa tooltip yopiladi
 let scrollTimeout;
 document.addEventListener(
   "scroll",
