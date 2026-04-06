@@ -3,9 +3,22 @@ let isTranslating = false;
 
 // Cache va rate limiting
 const translationCache = new Map();
-const MAX_CACHE_SIZE = 100; // Maksimal cache hajmi
-const RATE_LIMIT_DELAY = 1000; // 1 soniyada 1 so'rov
+const MAX_CACHE_SIZE = 100;
+const RATE_LIMIT_DELAY = 1000;
 let lastRequestTime = 0;
+
+// Tilni chrome.storage'dan olish
+let targetLang = "uz";
+try {
+  chrome.storage.sync.get("targetLang", (result) => {
+    if (result.targetLang) targetLang = result.targetLang;
+  });
+  chrome.storage.onChanged.addListener((changes) => {
+    if (changes.targetLang) targetLang = changes.targetLang.newValue;
+  });
+} catch {
+  // fallback
+}
 
 function hideTooltip() {
   if (tooltip) {
@@ -27,21 +40,17 @@ function debounce(func, delay) {
   };
 }
 
-async function translateText(text, targetLang) {
+async function translateText(text, lang) {
   if (isTranslating) return null;
 
-  // Cache'dan tekshirish
-  const cacheKey = `${text}_${targetLang}`;
+  const cacheKey = `${text}_${lang}`;
   if (translationCache.has(cacheKey)) {
     return translationCache.get(cacheKey);
   }
 
-  // Rate limiting
   const now = Date.now();
   const timeSinceLastRequest = now - lastRequestTime;
-
   if (timeSinceLastRequest < RATE_LIMIT_DELAY) {
-    // Agar juda tez so'rov bo'lsa, kutish
     await new Promise((resolve) =>
       setTimeout(resolve, RATE_LIMIT_DELAY - timeSinceLastRequest)
     );
@@ -52,21 +61,11 @@ async function translateText(text, targetLang) {
 
   try {
     const response = await fetch(
-      `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(
-        text
-      )}`,
-      {
-        method: "GET",
-        headers: {
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-        },
-      }
+      `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${lang}&dt=t&q=${encodeURIComponent(text)}`
     );
 
     if (!response.ok) {
       if (response.status === 429) {
-        // Rate limit xatosi
-        console.warn("Tarjima limitiga yetildi, biroz kutib turing...");
         await new Promise((resolve) => setTimeout(resolve, 2000));
         isTranslating = false;
         return "Tarjima limitiga yetildi, biroz kutib turing...";
@@ -77,9 +76,7 @@ async function translateText(text, targetLang) {
     const data = await response.json();
     const translated = data?.[0]?.[0]?.[0] || "Tarjima topilmadi";
 
-    // Cache'ga saqlash
     if (translationCache.size >= MAX_CACHE_SIZE) {
-      // Eski cache'ni tozalash (FIFO)
       const firstKey = translationCache.keys().next().value;
       translationCache.delete(firstKey);
     }
@@ -94,18 +91,12 @@ async function translateText(text, targetLang) {
   }
 }
 
-function speakText(text, lang = "auto") {
-  if (!("speechSynthesis" in window)) {
-    console.warn("Ovoz orqali o'qish qo'llab-quvvatlanmaydi");
-    return;
-  }
+// Yaxshilangan TTS funksiyasi
+function speakText(text, lang = "en") {
+  if (!("speechSynthesis" in window)) return;
 
-  // Avval to'xtatish
   window.speechSynthesis.cancel();
 
-  const utterance = new SpeechSynthesisUtterance(text);
-
-  // Til kodini sozlash
   const langMap = {
     uz: "uz-UZ",
     en: "en-US",
@@ -113,10 +104,23 @@ function speakText(text, lang = "auto") {
     tr: "tr-TR",
     ar: "ar-SA",
     fr: "fr-FR",
-    auto: "en-US", // Avtomatik til aniqlash uchun default
   };
 
-  utterance.lang = langMap[lang] || langMap["en"];
+  const utterance = new SpeechSynthesisUtterance(text);
+  const targetVoiceLang = langMap[lang] || "en-US";
+
+  // Eng mos ovozni topish
+  const voices = window.speechSynthesis.getVoices();
+  const matchedVoice =
+    voices.find((v) => v.lang === targetVoiceLang && !v.localService) ||
+    voices.find((v) => v.lang === targetVoiceLang) ||
+    voices.find((v) => v.lang.startsWith(lang));
+
+  if (matchedVoice) {
+    utterance.voice = matchedVoice;
+  }
+
+  utterance.lang = targetVoiceLang;
   utterance.rate = 0.9;
   utterance.pitch = 1;
   utterance.volume = 1;
@@ -124,18 +128,23 @@ function speakText(text, lang = "auto") {
   window.speechSynthesis.speak(utterance);
 }
 
-// Asl matnning tilini aniqlash funksiyasi
+// Voices yuklangandan keyin tayyor bo'lishi uchun
+if ("speechSynthesis" in window) {
+  window.speechSynthesis.getVoices();
+  window.speechSynthesis.onvoiceschanged = () => {
+    window.speechSynthesis.getVoices();
+  };
+}
+
 async function detectLanguage(text) {
   try {
     const response = await fetch(
-      `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${encodeURIComponent(
-        text.slice(0, 100)
-      )}`
+      `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${encodeURIComponent(text.slice(0, 100))}`
     );
     const data = await response.json();
-    return data[2] || "en"; // Google Translate API til kodini qaytaradi
+    return data[2] || "en";
   } catch {
-    return "en"; // Xatolik bo'lsa default ingliz tili
+    return "en";
   }
 }
 
@@ -175,125 +184,38 @@ function showTooltip(x, y, text, originalText) {
   const translatedText = document.createElement("div");
   translatedText.textContent = text;
   translatedText.style.fontWeight = "500";
-  translatedText.style.marginBottom = "4px";
 
-  const originalTextEl = document.createElement("div");
-  originalTextEl.textContent = `"${originalText.slice(0, 50)}${
-    originalText.length > 50 ? "..." : ""
-  }"`;
-  originalTextEl.style.fontSize = "12px";
-  originalTextEl.style.opacity = "0.7";
-  originalTextEl.style.fontStyle = "italic";
-
-  const playOriginalBtn = document.createElement("button");
-  playOriginalBtn.innerHTML = `
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" fill="currentColor"/>
-    </svg>
-  `;
-  playOriginalBtn.title = "Asl matnni ovoz orqali o'qish";
-  Object.assign(playOriginalBtn.style, {
-    background: "rgba(255,255,255,0.1)",
-    border: "none",
-    color: "#fff",
-    cursor: "pointer",
-    borderRadius: "50%",
-    width: "32px",
-    height: "32px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    transition: "all 0.2s ease",
-    padding: "0",
-  });
-
-  playOriginalBtn.addEventListener("mouseenter", () => {
-    playOriginalBtn.style.background = "rgba(255,255,255,0.2)";
-    playOriginalBtn.style.transform = "scale(1.1)";
-  });
-
-  playOriginalBtn.addEventListener("mouseleave", () => {
-    playOriginalBtn.style.background = "rgba(255,255,255,0.1)";
-    playOriginalBtn.style.transform = "scale(1)";
-  });
-
+  const playOriginalBtn = createButton(
+    `<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" fill="currentColor"/></svg>`,
+    "Asl matnni tinglash",
+    "rgba(255,255,255,0.1)",
+    "rgba(255,255,255,0.2)"
+  );
   playOriginalBtn.addEventListener("click", async (e) => {
     e.stopPropagation();
     const detectedLang = await detectLanguage(originalText);
     speakText(originalText, detectedLang);
   });
 
-  const playTranslatedBtn = document.createElement("button");
-  playTranslatedBtn.innerHTML = `
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z" fill="currentColor"/>
-      <path d="M15.5 12L9.5 8v8l6-4z" fill="currentColor" opacity="0.3"/>
-    </svg>
-  `;
-  playTranslatedBtn.title = "Tarjima qilingan matnni ovoz orqali o'qish";
-  Object.assign(playTranslatedBtn.style, {
-    background: "rgba(76, 175, 80, 0.3)",
-    border: "none",
-    color: "#fff",
-    cursor: "pointer",
-    borderRadius: "50%",
-    width: "32px",
-    height: "32px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    transition: "all 0.2s ease",
-    padding: "0",
-  });
-
-  playTranslatedBtn.addEventListener("mouseenter", () => {
-    playTranslatedBtn.style.background = "rgba(76, 175, 80, 0.5)";
-    playTranslatedBtn.style.transform = "scale(1.1)";
-  });
-
-  playTranslatedBtn.addEventListener("mouseleave", () => {
-    playTranslatedBtn.style.background = "rgba(76, 175, 80, 0.3)";
-    playTranslatedBtn.style.transform = "scale(1)";
-  });
-
+  const playTranslatedBtn = createButton(
+    `<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z" fill="currentColor"/></svg>`,
+    "Tarjimani tinglash",
+    "rgba(76, 175, 80, 0.3)",
+    "rgba(76, 175, 80, 0.5)"
+  );
   playTranslatedBtn.addEventListener("click", (e) => {
     e.stopPropagation();
-    const targetLang = localStorage.getItem("targetLang") || "uz";
     speakText(text, targetLang);
   });
 
-  const closeBtn = document.createElement("button");
-  closeBtn.innerHTML = `
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill="currentColor"/>
-    </svg>
-  `;
-  closeBtn.title = "Yopish";
-  Object.assign(closeBtn.style, {
-    background: "rgba(255,255,255,0.1)",
-    border: "none",
-    color: "#fff",
-    cursor: "pointer",
-    borderRadius: "50%",
-    width: "28px",
-    height: "28px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    transition: "all 0.2s ease",
-    padding: "0",
-  });
-
-  closeBtn.addEventListener("mouseenter", () => {
-    closeBtn.style.background = "rgba(244, 67, 54, 0.3)";
-    closeBtn.style.transform = "scale(1.1)";
-  });
-
-  closeBtn.addEventListener("mouseleave", () => {
-    closeBtn.style.background = "rgba(255,255,255,0.1)";
-    closeBtn.style.transform = "scale(1)";
-  });
-
+  const closeBtn = createButton(
+    `<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill="currentColor"/></svg>`,
+    "Yopish",
+    "rgba(255,255,255,0.1)",
+    "rgba(244, 67, 54, 0.3)"
+  );
+  closeBtn.style.width = "28px";
+  closeBtn.style.height = "28px";
   closeBtn.addEventListener("click", (e) => {
     e.stopPropagation();
     window.speechSynthesis.cancel();
@@ -301,23 +223,23 @@ function showTooltip(x, y, text, originalText) {
   });
 
   const buttonContainer = document.createElement("div");
-  buttonContainer.style.display = "flex";
-  buttonContainer.style.flexDirection = "row";
-  buttonContainer.style.gap = "8px";
-  buttonContainer.style.justifyContent = "center";
-  buttonContainer.style.alignItems = "center";
-  buttonContainer.style.marginTop = "4px";
+  Object.assign(buttonContainer.style, {
+    display: "flex",
+    flexDirection: "row",
+    gap: "8px",
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: "4px",
+  });
   buttonContainer.appendChild(playOriginalBtn);
   buttonContainer.appendChild(playTranslatedBtn);
   buttonContainer.appendChild(closeBtn);
 
   textContainer.appendChild(translatedText);
-  textContainer.appendChild(originalTextEl);
   tooltip.appendChild(textContainer);
   tooltip.appendChild(buttonContainer);
   document.body.appendChild(tooltip);
 
-  // Add style tag once
   if (!document.querySelector("#tooltip-style")) {
     const style = document.createElement("style");
     style.id = "tooltip-style";
@@ -335,6 +257,35 @@ function showTooltip(x, y, text, originalText) {
   }
 }
 
+function createButton(svgHTML, title, bgDefault, bgHover) {
+  const btn = document.createElement("button");
+  btn.innerHTML = svgHTML;
+  btn.title = title;
+  Object.assign(btn.style, {
+    background: bgDefault,
+    border: "none",
+    color: "#fff",
+    cursor: "pointer",
+    borderRadius: "50%",
+    width: "32px",
+    height: "32px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    transition: "all 0.2s ease",
+    padding: "0",
+  });
+  btn.addEventListener("mouseenter", () => {
+    btn.style.background = bgHover;
+    btn.style.transform = "scale(1.1)";
+  });
+  btn.addEventListener("mouseleave", () => {
+    btn.style.background = bgDefault;
+    btn.style.transform = "scale(1)";
+  });
+  return btn;
+}
+
 const handleSelection = debounce(async (event) => {
   const selection = window.getSelection();
   const selectedText = selection.toString().trim();
@@ -350,7 +301,6 @@ const handleSelection = debounce(async (event) => {
     return;
   }
 
-  const targetLang = localStorage.getItem("targetLang") || "uz";
   const translatedText = await translateText(selectedText, targetLang);
 
   if (translatedText && translatedText !== selectedText) {
@@ -380,9 +330,8 @@ document.addEventListener(
     }
   },
   true
-); // true => capturing fazada ishlasin
+);
 
-// ✅ Sahifaning boshqa joyiga click qilinsa
 document.addEventListener("mousedown", (event) => {
   if (tooltip && !event.target.closest(".translation-tooltip")) {
     setTimeout(() => {
@@ -391,15 +340,4 @@ document.addEventListener("mousedown", (event) => {
       }
     }, 100);
   }
-});
-
-// ✅ Til sozlanmasi birinchi marta ochilganda
-document.addEventListener("DOMContentLoaded", () => {
-  if (!localStorage.getItem("targetLang")) {
-    localStorage.setItem("targetLang", "uz");
-  }
-  console.log(
-    "Tarjima extension yuklandi! Til:",
-    localStorage.getItem("targetLang")
-  );
 });
