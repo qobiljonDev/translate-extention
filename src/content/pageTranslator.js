@@ -139,5 +139,6 @@ export function restorePage() {
   originalTexts = [];
   isPageTranslated = false;
   isTranslatingPage = false;
+  document.getElementById("uz-translate-progress")?.remove();
   document.getElementById("uz-restore-page-btn")?.remove();
 }

@@ -11,6 +11,9 @@ export function saveToHistory(original, translated, detectedLang) {
   storage.local.get("history", (result) => {
     if (runtime.lastError) return;
     const history = result.history || [];
+    // Oxirgi yozuv bilan bir xil bo'lsa, qayta saqlamaslik
+    const last = history[0];
+    if (last && last.original === original && last.targetLang === state.targetLang) return;
     history.unshift({
       original,
       translated,

@@ -55,6 +55,7 @@ function createButton(svgHTML, title, bgDefault, bgHover) {
     transition: "all 0.2s ease",
     padding: "0",
   });
+  btn.addEventListener("mouseup", (e) => e.stopPropagation());
   btn.addEventListener("mouseenter", () => {
     btn.style.background = bgHover;
     btn.style.transform = "scale(1.1)";

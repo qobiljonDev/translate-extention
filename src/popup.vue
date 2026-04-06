@@ -1,41 +1,64 @@
 <template>
-  <div class="w-[400px] max-h-[600px] overflow-y-auto custom-scroll bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white font-sans">
-    <!-- Header -->
-    <div class="relative overflow-hidden">
-      <div class="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/5 to-transparent"></div>
-      <div class="relative flex items-center justify-center gap-3 px-6 pt-7 pb-5">
+  <div
+    class="h-[450px] flex flex-col bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white font-sans overflow-hidden"
+  >
+    <div class="relative overflow-hidden flex-shrink-0">
+      <div
+        class="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/5 to-transparent"
+      ></div>
+      <div
+        class="relative flex items-center justify-center gap-3 px-6 pt-7 pb-5"
+      >
         <div class="p-2.5 bg-blue-500/10 rounded-xl ring-1 ring-blue-500/20">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0014.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z" fill="#60a5fa"/>
+            <path
+              d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0014.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"
+              fill="#60a5fa"
+            />
           </svg>
         </div>
         <div>
           <h1 class="text-lg font-bold tracking-tight">UZ Hover Translator</h1>
-          <p class="text-[11px] text-slate-400 -mt-0.5">Tez va qulay tarjimon</p>
+          <p class="text-[11px] text-slate-400 -mt-0.5">
+            Tez va qulay tarjimon
+          </p>
         </div>
       </div>
     </div>
 
-    <!-- Tabs -->
-    <div class="flex px-6 gap-2 bg-slate-800/30 sticky top-0 z-10">
+    <!-- Tabs (fixed) -->
+    <div
+      class="flex px-6 gap-2 bg-slate-900/95 backdrop-blur-sm flex-shrink-0 z-10"
+    >
       <button
         v-for="tab in tabs"
         :key="tab.id"
         @click="activeTab = tab.id"
         class="flex-1 py-3.5 text-xs font-semibold tracking-wide transition-all duration-200 border-b-2 flex items-center justify-center gap-1.5"
-        :class="activeTab === tab.id
-          ? 'text-blue-400 border-blue-400 bg-blue-400/5'
-          : 'text-slate-500 border-transparent hover:text-slate-300 hover:border-slate-600'"
+        :class="
+          activeTab === tab.id
+            ? 'text-blue-400 border-blue-400 bg-blue-400/5'
+            : 'text-slate-500 border-transparent hover:text-slate-300 hover:border-slate-600'
+        "
       >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" v-html="tab.icon"></svg>
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          v-html="tab.icon"
+        ></svg>
         {{ tab.label }}
       </button>
     </div>
 
-    <!-- Content -->
-    <div class="px-6 py-6">
+    <!-- Content (scrollable) -->
+    <div class="flex-1 overflow-y-auto custom-scroll px-6 py-6">
       <KeepAlive>
-        <TranslateTab v-if="activeTab === 'translate'" v-model:lang="selectedLang" />
+        <TranslateTab
+          v-if="activeTab === 'translate'"
+          v-model:lang="selectedLang"
+        />
       </KeepAlive>
       <KeepAlive>
         <HistoryTab v-if="activeTab === 'history'" />
@@ -45,9 +68,11 @@
       </KeepAlive>
     </div>
 
-    <!-- Footer -->
-    <div class="px-6 pb-5 pt-2">
-      <div class="flex items-center justify-center gap-3 text-[10px] text-slate-600">
+    <!-- Footer (fixed) -->
+    <div class="px-6 pb-5 pt-2 flex-shrink-0">
+      <div
+        class="flex items-center justify-center gap-3 text-[10px] text-slate-600"
+      >
         <span>Ctrl+Shift+T</span>
         <span class="w-1 h-1 rounded-full bg-slate-700"></span>
         <span>Matn belgilang</span>
