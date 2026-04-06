@@ -1,13 +1,16 @@
 <template>
-  <div class="bg-slate-700/30 border border-slate-700/50 rounded-lg p-2.5 text-sm" :class="{ group: removable }">
+  <div
+    class="bg-slate-800/40 border border-slate-700/40 rounded-xl p-3 text-sm transition-all duration-200 hover:bg-slate-800/60 hover:border-slate-600/50"
+    :class="{ group: removable }"
+  >
     <div class="text-slate-400 text-xs mb-1 truncate">{{ item.original }}</div>
-    <div class="text-white">{{ item.translated }}</div>
-    <div class="flex items-center justify-between mt-1.5">
-      <span class="text-[10px] text-slate-500">{{ formatTime(item.timestamp) }}</span>
+    <div class="text-slate-100 font-medium">{{ item.translated }}</div>
+    <div class="flex items-center justify-between mt-2">
+      <span class="text-[10px] text-slate-600">{{ formatTime(item.timestamp) }}</span>
       <div class="flex gap-1">
         <button
           @click="$emit('copy', item.translated)"
-          class="text-slate-500 hover:text-white transition-colors p-1"
+          class="text-slate-500 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-slate-700/50"
           title="Nusxalash"
         >
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
@@ -16,7 +19,7 @@
         </button>
         <button
           @click="$emit('speak', item.translated, item.targetLang)"
-          class="text-slate-500 hover:text-blue-400 transition-colors p-1"
+          class="text-slate-500 hover:text-blue-400 transition-colors p-1.5 rounded-lg hover:bg-blue-500/10"
           title="Tinglash"
         >
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
@@ -26,7 +29,7 @@
         <button
           v-if="removable"
           @click="$emit('remove')"
-          class="text-slate-500 hover:text-red-400 transition-colors p-1 opacity-0 group-hover:opacity-100"
+          class="text-slate-500 hover:text-red-400 transition-colors p-1.5 rounded-lg hover:bg-red-500/10 opacity-0 group-hover:opacity-100"
           title="O'chirish"
         >
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none">

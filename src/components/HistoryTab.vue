@@ -15,7 +15,7 @@
       Hali tarjimalar yo'q
     </div>
 
-    <div class="space-y-2 max-h-[300px] overflow-y-auto pr-1 custom-scroll">
+    <div class="space-y-2">
       <TranslationItem
         v-for="(item, i) in items"
         :key="i"
@@ -28,25 +28,29 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onActivated, onMounted } from "vue";
 import { getTtsLang } from "../config.js";
+import { storage } from "../chrome.js";
 import TranslationItem from "./TranslationItem.vue";
 
 const items = ref([]);
 
-onMounted(() => {
-  chrome.storage.local.get("history", (result) => {
+function loadData() {
+  storage.local.get("history", (result) => {
     items.value = result.history || [];
   });
-});
+}
+
+onMounted(loadData);
+onActivated(loadData);
 
 function clearAll() {
-  chrome.storage.local.set({ history: [] });
+  storage.local.set({ history: [] });
   items.value = [];
 }
 
 function copyText(text) {
-  navigator.clipboard.writeText(text);
+  navigator.clipboard.writeText(text).catch(() => {});
 }
 
 function speakAny(text, lang) {

@@ -1,36 +1,27 @@
-/** Content script uchun umumiy holat (state) */
+/**
+ * Content script uchun umumiy holat (state)
+ * Object ichida saqlash — boshqa modullar doim yangi qiymatni ko'radi
+ */
 
-export let targetLang = "uz";
-export let tooltipTheme = "auto";
-export let tooltip = null;
-export let isPinned = false;
+import { storage } from "../chrome.js";
 
-export function setTargetLang(lang) {
-  targetLang = lang;
-}
+const state = {
+  targetLang: "uz",
+  tooltipTheme: "auto",
+  tooltip: null,
+  isPinned: false,
+};
 
-export function setTooltipTheme(theme) {
-  tooltipTheme = theme;
-}
-
-export function setTooltip(el) {
-  tooltip = el;
-}
-
-export function setIsPinned(val) {
-  isPinned = val;
-}
+export default state;
 
 /** Chrome storage'dan sozlamalarni yuklash */
 export function initSettings() {
-  try {
-    chrome.storage.sync.get(["targetLang", "tooltipTheme"], (result) => {
-      if (result.targetLang) targetLang = result.targetLang;
-      if (result.tooltipTheme) tooltipTheme = result.tooltipTheme;
-    });
-    chrome.storage.onChanged.addListener((changes) => {
-      if (changes.targetLang) targetLang = changes.targetLang.newValue;
-      if (changes.tooltipTheme) tooltipTheme = changes.tooltipTheme.newValue;
-    });
-  } catch {}
+  storage.sync.get(["targetLang", "tooltipTheme"], (result) => {
+    if (result.targetLang) state.targetLang = result.targetLang;
+    if (result.tooltipTheme) state.tooltipTheme = result.tooltipTheme;
+  });
+  storage.onChanged.addListener((changes) => {
+    if (changes.targetLang) state.targetLang = changes.targetLang.newValue;
+    if (changes.tooltipTheme) state.tooltipTheme = changes.tooltipTheme.newValue;
+  });
 }

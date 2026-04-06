@@ -15,7 +15,7 @@
       Sevimli so'zlar yo'q
     </div>
 
-    <div class="space-y-2 max-h-[300px] overflow-y-auto pr-1 custom-scroll">
+    <div class="space-y-2">
       <TranslationItem
         v-for="(item, i) in items"
         :key="i"
@@ -30,30 +30,34 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onActivated, onMounted } from "vue";
 import { getTtsLang } from "../config.js";
+import { storage } from "../chrome.js";
 import TranslationItem from "./TranslationItem.vue";
 
 const items = ref([]);
 
-onMounted(() => {
-  chrome.storage.local.get("favorites", (result) => {
+function loadData() {
+  storage.local.get("favorites", (result) => {
     items.value = result.favorites || [];
   });
-});
+}
+
+onMounted(loadData);
+onActivated(loadData);
 
 function removeItem(index) {
   items.value.splice(index, 1);
-  chrome.storage.local.set({ favorites: items.value });
+  storage.local.set({ favorites: [...items.value] });
 }
 
 function clearAll() {
-  chrome.storage.local.set({ favorites: [] });
+  storage.local.set({ favorites: [] });
   items.value = [];
 }
 
 function copyText(text) {
-  navigator.clipboard.writeText(text);
+  navigator.clipboard.writeText(text).catch(() => {});
 }
 
 function speakAny(text, lang) {

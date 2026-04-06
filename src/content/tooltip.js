@@ -2,31 +2,32 @@
 
 import { getLangName } from "../config.js";
 import { detectTheme, getThemeStyles } from "../utils.js";
-import { tooltip, isPinned, targetLang, tooltipTheme, setTooltip, setIsPinned } from "./state.js";
+import state from "./state.js";
 import { speakText } from "./tts.js";
 import { saveToHistory, toggleFavorite, checkIsFavorite } from "./storage.js";
 
 /** Tooltip'ni yopish (pinned bo'lsa yopmaydi) */
 export function hideTooltip() {
-  if (isPinned) return;
-  if (tooltip) {
-    tooltip.remove();
-    setTooltip(null);
-  }
+  if (state.isPinned) return;
+  removeTooltip();
 }
 
 /** Tooltip'ni majburiy yopish */
 export function forceHideTooltip() {
-  setIsPinned(false);
-  if (tooltip) {
-    tooltip.remove();
-    setTooltip(null);
+  state.isPinned = false;
+  removeTooltip();
+}
+
+function removeTooltip() {
+  if (state.tooltip) {
+    state.tooltip.remove();
+    state.tooltip = null;
   }
 }
 
 /** Sahifa temasini aniqlash */
 function getPageTheme() {
-  if (tooltipTheme !== "auto") return tooltipTheme;
+  if (state.tooltipTheme !== "auto") return state.tooltipTheme;
   try {
     const bg = window.getComputedStyle(document.body).backgroundColor;
     return detectTheme(bg);
@@ -39,6 +40,7 @@ function createButton(svgHTML, title, bgDefault, bgHover) {
   const btn = document.createElement("button");
   btn.innerHTML = svgHTML;
   btn.title = title;
+  btn.setAttribute("aria-label", title);
   Object.assign(btn.style, {
     background: bgDefault,
     border: "none",
@@ -86,7 +88,7 @@ function createTooltipButtons(styles, text, originalText, detectedLang) {
   const playTranslatedBtn = createButton(ICONS.play, "Tarjimani tinglash", "rgba(76,175,80,0.3)", "rgba(76,175,80,0.5)");
   playTranslatedBtn.addEventListener("click", (e) => {
     e.stopPropagation();
-    speakText(text, targetLang);
+    speakText(text, state.targetLang);
   });
 
   const copyBtn = createButton(ICONS.copy, "Nusxalash", styles.btnBg, styles.btnHover);
@@ -95,15 +97,27 @@ function createTooltipButtons(styles, text, originalText, detectedLang) {
     navigator.clipboard.writeText(text).then(() => {
       copyBtn.innerHTML = ICONS.check;
       setTimeout(() => { copyBtn.innerHTML = ICONS.copy; }, 1500);
+    }).catch(() => {
+      // Fallback: execCommand
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      textarea.remove();
+      copyBtn.innerHTML = ICONS.check;
+      setTimeout(() => { copyBtn.innerHTML = ICONS.copy; }, 1500);
     });
   });
 
   const pinBtn = createButton(ICONS.pin, "Qotirish", styles.btnBg, styles.btnHover);
   pinBtn.addEventListener("click", (e) => {
     e.stopPropagation();
-    setIsPinned(!isPinned);
-    pinBtn.style.color = isPinned ? "#3498db" : "";
-    pinBtn.style.background = isPinned ? "rgba(52,152,219,0.2)" : styles.btnBg;
+    state.isPinned = !state.isPinned;
+    pinBtn.style.color = state.isPinned ? "#3498db" : "";
+    pinBtn.style.background = state.isPinned ? "rgba(52,152,219,0.2)" : styles.btnBg;
   });
 
   const favBtn = createButton(ICONS.star, "Sevimlilarga qo'shish", styles.btnBg, styles.btnHover);
@@ -138,7 +152,8 @@ export function showTooltip(x, y, text, originalText, detectedLang) {
   const styles = getThemeStyles(theme);
 
   const el = document.createElement("div");
-  el.className = "translation-tooltip";
+  el.className = "uz-translator-tooltip";
+  el.setAttribute("role", "tooltip");
 
   // Ekran chegaralarini hisobga olgan pozitsiya
   const tooltipWidth = 280;
@@ -146,21 +161,13 @@ export function showTooltip(x, y, text, originalText, detectedLang) {
   let posX = x + 10;
   let posY = y + 10;
 
-  // O'ngga chiqib ketmasin
-  if (posX + tooltipWidth > window.innerWidth) {
-    posX = window.innerWidth - tooltipWidth - 10;
-  }
-  // Chapga chiqib ketmasin
+  if (posX + tooltipWidth > window.innerWidth) posX = window.innerWidth - tooltipWidth - 10;
   if (posX < 10) posX = 10;
-
-  // Pastga chiqib ketsa — tepaga ko'rsatish
-  if (posY + tooltipHeight > window.innerHeight) {
-    posY = y - tooltipHeight - 10;
-  }
-  // Tepaga chiqib ketmasin
+  if (posY + tooltipHeight > window.innerHeight) posY = y - tooltipHeight - 10;
   if (posY < 10) posY = 10;
 
   Object.assign(el.style, {
+    all: "initial",
     position: "fixed",
     left: `${posX}px`,
     top: `${posY}px`,
@@ -182,12 +189,12 @@ export function showTooltip(x, y, text, originalText, detectedLang) {
     cursor: "default",
     lineHeight: "1.4",
     wordWrap: "break-word",
-    animation: "fadeIn 0.2s ease-out",
+    animation: "uzTranslatorFadeIn 0.2s ease-out",
   });
 
   // Til labeli
   const fromName = getLangName(detectedLang);
-  const toName = getLangName(targetLang);
+  const toName = getLangName(state.targetLang);
   const langLabel = document.createElement("div");
   langLabel.textContent = `${fromName} → ${toName}`;
   Object.assign(langLabel.style, {
@@ -220,25 +227,24 @@ export function showTooltip(x, y, text, originalText, detectedLang) {
   el.appendChild(buttonContainer);
   document.body.appendChild(el);
 
-  setTooltip(el);
+  state.tooltip = el;
   saveToHistory(originalText, text, detectedLang);
   injectTooltipStyles();
 }
 
-/** Tooltip CSS animatsiyasi (bir marta inject) */
+/** Tooltip CSS animatsiyasi (bir marta inject, unique nom) */
 function injectTooltipStyles() {
-  if (document.querySelector("#tooltip-style")) return;
+  if (document.querySelector("#uz-translator-style")) return;
 
   const style = document.createElement("style");
-  style.id = "tooltip-style";
+  style.id = "uz-translator-style";
   style.textContent = `
-    @keyframes fadeIn {
+    @keyframes uzTranslatorFadeIn {
       from { opacity: 0; transform: translateY(-5px); }
       to { opacity: 1; transform: translateY(0); }
     }
-    .translation-tooltip:hover {
-      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
-      transition: all 0.2s ease;
+    .uz-translator-tooltip:hover {
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4) !important;
     }
   `;
   document.head.appendChild(style);

@@ -1,37 +1,40 @@
 <template>
-  <div>
-    <label class="block text-xs text-slate-400 font-medium mb-1.5">Tarjima tili</label>
-    <LangDropdown v-model="selectedLang" class="mb-3" />
+  <div class="space-y-5">
+    <!-- Til tanlash -->
+    <div>
+      <label class="block text-[11px] text-slate-400 font-semibold uppercase tracking-wider mb-2.5">Tarjima tili</label>
+      <LangDropdown v-model="selectedLang" />
+    </div>
 
     <!-- Input -->
-    <div class="relative mb-3">
+    <div class="relative">
       <input
         v-model="text"
         type="text"
         placeholder="Matn kiriting..."
-        class="w-full p-2.5 pr-10 bg-slate-700/50 border border-slate-600 rounded-lg text-white text-sm placeholder-slate-500 hover:border-slate-500 transition-colors focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400/30"
+        class="w-full px-4 py-3.5 pr-10 bg-slate-800/60 border border-slate-700 rounded-xl text-white text-sm placeholder-slate-500 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 hover:border-slate-600"
         @keyup.enter="translate"
       />
       <button
         v-if="text"
         @click="text = ''; translated = ''"
-        class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors"
+        class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors p-1 rounded-full hover:bg-slate-700/50"
       >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
           <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill="currentColor"/>
         </svg>
       </button>
     </div>
 
     <!-- Buttons -->
-    <div class="flex gap-2 mb-3">
+    <div class="flex gap-3">
       <button
         @click="translate"
         :disabled="loading || !text.trim()"
-        class="flex-1 p-2.5 rounded-lg font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2"
+        class="flex-1 px-4 py-3.5 rounded-xl font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2"
         :class="loading || !text.trim()
-          ? 'bg-slate-600 text-slate-400 cursor-not-allowed'
-          : 'bg-blue-500 hover:bg-blue-400 text-white hover:shadow-lg hover:shadow-blue-500/25 active:scale-[0.98]'"
+          ? 'bg-slate-700/50 text-slate-500 cursor-not-allowed'
+          : 'bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:from-blue-500 hover:to-blue-400 hover:shadow-lg hover:shadow-blue-500/30 active:scale-[0.97]'"
       >
         <svg v-if="loading" class="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none">
           <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-linecap="round" class="opacity-25"/>
@@ -41,7 +44,7 @@
       </button>
       <button
         @click="translatePageAction"
-        class="p-2.5 rounded-lg text-sm transition-all duration-200 bg-emerald-600 hover:bg-emerald-500 text-white hover:shadow-lg active:scale-[0.98]"
+        class="px-4 py-3.5 rounded-xl text-sm transition-all duration-200 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white hover:from-emerald-500 hover:to-emerald-400 hover:shadow-lg hover:shadow-emerald-500/20 active:scale-[0.97]"
         title="Sahifani tarjima qilish"
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -52,16 +55,16 @@
 
     <!-- Result -->
     <Transition name="result">
-      <div v-if="translated" class="bg-slate-700/40 border border-slate-600/50 p-3.5 rounded-lg">
-        <div class="flex items-start justify-between gap-2">
-          <div class="flex-1">
-            <span class="text-[11px] text-slate-400 uppercase tracking-wider font-medium">Tarjima</span>
-            <p class="text-sm mt-1 leading-relaxed">{{ translated }}</p>
+      <div v-if="translated" class="bg-gradient-to-br from-slate-800/80 to-slate-800/40 border border-slate-700/50 p-4 rounded-xl">
+        <div class="flex items-start justify-between gap-3">
+          <div class="flex-1 min-w-0">
+            <span class="text-[10px] text-blue-400/70 uppercase tracking-widest font-bold">Tarjima</span>
+            <p class="text-sm mt-2 leading-relaxed text-slate-100">{{ translated }}</p>
           </div>
-          <div class="flex gap-1">
+          <div class="flex gap-2 flex-shrink-0">
             <button
               @click="copy"
-              class="flex-shrink-0 bg-slate-600/50 hover:bg-slate-500/50 text-slate-300 rounded-full p-1.5 transition-all duration-200 hover:scale-110"
+              class="bg-slate-700/60 hover:bg-slate-600/60 text-slate-400 hover:text-white rounded-lg p-2.5 transition-all duration-200 hover:scale-105"
               :title="copied ? 'Nusxalandi!' : 'Nusxalash'"
             >
               <svg v-if="!copied" width="14" height="14" viewBox="0 0 24 24" fill="none">
@@ -73,7 +76,7 @@
             </button>
             <button
               @click="speak"
-              class="flex-shrink-0 bg-blue-500/20 hover:bg-blue-500/40 text-blue-300 rounded-full p-1.5 transition-all duration-200 hover:scale-110"
+              class="bg-blue-500/15 hover:bg-blue-500/30 text-blue-400 rounded-lg p-2.5 transition-all duration-200 hover:scale-105"
               title="Tinglash"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
@@ -84,10 +87,6 @@
         </div>
       </div>
     </Transition>
-
-    <div class="mt-3 text-center text-[10px] text-slate-500">
-      Matn belgilang — avtomatik tarjima | Ctrl+Shift+T
-    </div>
   </div>
 </template>
 
@@ -95,10 +94,10 @@
 import { ref, watch } from "vue";
 import { getTtsLang } from "../config.js";
 import { fetchTranslation } from "../utils.js";
+import { storage, runtime } from "../chrome.js";
 import LangDropdown from "./LangDropdown.vue";
 
 const selectedLang = defineModel("lang", { default: "uz" });
-const emit = defineEmits(["langChange"]);
 
 const text = ref("");
 const translated = ref("");
@@ -106,7 +105,7 @@ const loading = ref(false);
 const copied = ref(false);
 
 watch(selectedLang, (val) => {
-  chrome.storage.sync.set({ targetLang: val });
+  storage.sync.set({ targetLang: val });
 });
 
 async function translate() {
@@ -123,12 +122,12 @@ async function translate() {
 }
 
 function translatePageAction() {
-  chrome.runtime.sendMessage({ action: "translate-page" });
+  runtime.sendMessage({ action: "translate-page" });
   window.close();
 }
 
 function copy() {
-  navigator.clipboard.writeText(translated.value);
+  navigator.clipboard.writeText(translated.value).catch(() => {});
   copied.value = true;
   setTimeout(() => (copied.value = false), 1500);
 }
@@ -151,8 +150,8 @@ function speak() {
 </script>
 
 <style scoped>
-.result-enter-active { transition: all 0.3s ease-out; }
+.result-enter-active { transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
 .result-leave-active { transition: all 0.2s ease-in; }
-.result-enter-from { opacity: 0; transform: translateY(-8px); }
+.result-enter-from { opacity: 0; transform: translateY(-10px) scale(0.98); }
 .result-leave-to { opacity: 0; transform: translateY(4px); }
 </style>

@@ -1,13 +1,14 @@
 /** Butun sahifani tarjima qilish moduli */
 
-import { targetLang } from "./state.js";
+import state from "./state.js";
 import { translateBatch } from "./translator.js";
 
 const SKIP_TAGS = ["SCRIPT", "STYLE", "NOSCRIPT", "CODE", "PRE", "TEXTAREA"];
 const BATCH_SIZE = 10;
-const BATCH_DELAY = 200;
+const BATCH_DELAY = 300;
 
 let isPageTranslated = false;
+let isTranslatingPage = false;
 let originalTexts = [];
 
 /** Sahifadagi barcha text node'larni topish */
@@ -29,9 +30,13 @@ function collectTextNodes() {
 
 /** Progress indikator yaratish */
 function createProgressUI() {
+  // Eski progress bo'lsa o'chirish
+  document.getElementById("uz-translate-progress")?.remove();
+
   const el = document.createElement("div");
-  el.id = "translate-progress";
+  el.id = "uz-translate-progress";
   Object.assign(el.style, {
+    all: "initial",
     position: "fixed",
     top: "20px",
     right: "20px",
@@ -55,8 +60,9 @@ function createProgressUI() {
 /** "Asl holatga qaytarish" tugmasi */
 function createRestoreButton() {
   const btn = document.createElement("div");
-  btn.id = "restore-page-btn";
+  btn.id = "uz-restore-page-btn";
   Object.assign(btn.style, {
+    all: "initial",
     position: "fixed",
     bottom: "20px",
     right: "20px",
@@ -81,40 +87,49 @@ function createRestoreButton() {
 
 /** Sahifani tarjima qilish */
 export async function translatePage() {
-  if (isPageTranslated) {
-    restorePage();
-    return;
-  }
+  if (isPageTranslated) { restorePage(); return; }
+  if (isTranslatingPage) return; // Takroriy chaqiruvlarni bloklash
 
   const textNodes = collectTextNodes();
   if (textNodes.length === 0) return;
 
+  isTranslatingPage = true;
   const progress = createProgressUI();
   originalTexts = [];
   let translated = 0;
+  let retryDelay = BATCH_DELAY;
 
   for (let i = 0; i < textNodes.length; i += BATCH_SIZE) {
     const batch = textNodes.slice(i, i + BATCH_SIZE);
     const combined = batch.map((n) => n.textContent.trim()).join("\n");
 
     try {
-      const translatedText = await translateBatch(combined, targetLang);
+      const translatedText = await translateBatch(combined, state.targetLang);
       const splitResults = translatedText.split("\n");
 
       batch.forEach((node, idx) => {
         originalTexts.push({ node, original: node.textContent });
         if (splitResults[idx]) node.textContent = splitResults[idx];
       });
-    } catch {}
+      retryDelay = BATCH_DELAY; // Muvaffaqiyatli — delay'ni qaytarish
+    } catch (e) {
+      // Rate limit bo'lsa kutish vaqtini oshirish
+      if (e?.message?.includes("429")) {
+        retryDelay = Math.min(retryDelay * 2, 5000);
+      }
+      console.warn("Batch tarjima xatosi:", e);
+    }
 
     translated += batch.length;
     const percent = Math.round((translated / textNodes.length) * 100);
-    progress.querySelector("span").textContent = `Sahifa tarjima qilinmoqda... ${percent}%`;
-    await new Promise((r) => setTimeout(r, BATCH_DELAY));
+    const span = progress.querySelector("span");
+    if (span) span.textContent = `Sahifa tarjima qilinmoqda... ${percent}%`;
+    await new Promise((r) => setTimeout(r, retryDelay));
   }
 
   progress.remove();
   isPageTranslated = true;
+  isTranslatingPage = false;
   createRestoreButton();
 }
 
@@ -123,5 +138,6 @@ export function restorePage() {
   originalTexts.forEach(({ node, original }) => { node.textContent = original; });
   originalTexts = [];
   isPageTranslated = false;
-  document.getElementById("restore-page-btn")?.remove();
+  isTranslatingPage = false;
+  document.getElementById("uz-restore-page-btn")?.remove();
 }
