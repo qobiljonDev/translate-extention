@@ -1,9 +1,3 @@
-/**
- * Chrome API wrapper — dev serverda xato chiqmasligi uchun
- * Extension ichida haqiqiy chrome API ishlatadi
- * Localhost/dev da fallback qiymatlar qaytaradi
- */
-
 const isExtension = typeof chrome !== "undefined" && chrome.storage;
 
 export const storage = {
