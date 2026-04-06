@@ -1,37 +1,38 @@
-const isExtension = typeof chrome !== "undefined" && chrome.storage;
+const isExtension = () =>
+  typeof chrome !== "undefined" && chrome.runtime?.id && chrome.storage;
 
 export const storage = {
   sync: {
     get(keys, callback) {
-      if (isExtension) {
+      if (isExtension()) {
         chrome.storage.sync.get(keys, callback);
       } else {
         callback({});
       }
     },
     set(data) {
-      if (isExtension) {
+      if (isExtension()) {
         chrome.storage.sync.set(data);
       }
     },
   },
   local: {
     get(key, callback) {
-      if (isExtension) {
+      if (isExtension()) {
         chrome.storage.local.get(key, callback);
       } else {
         callback({});
       }
     },
     set(data) {
-      if (isExtension) {
+      if (isExtension()) {
         chrome.storage.local.set(data);
       }
     },
   },
   onChanged: {
     addListener(callback) {
-      if (isExtension) {
+      if (isExtension()) {
         chrome.storage.onChanged.addListener(callback);
       }
     },
@@ -40,18 +41,18 @@ export const storage = {
 
 export const runtime = {
   sendMessage(message) {
-    if (isExtension) {
+    if (isExtension()) {
       chrome.runtime.sendMessage(message);
     }
   },
   onMessage: {
     addListener(callback) {
-      if (isExtension) {
+      if (isExtension()) {
         chrome.runtime.onMessage.addListener(callback);
       }
     },
   },
   get lastError() {
-    return isExtension ? chrome.runtime.lastError : null;
+    return isExtension() ? chrome.runtime.lastError : null;
   },
 };
