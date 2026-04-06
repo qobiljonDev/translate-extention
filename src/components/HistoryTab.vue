@@ -1,18 +1,36 @@
 <template>
   <div>
     <div class="flex items-center justify-between mb-3">
-      <span class="text-xs text-slate-400">{{ items.length }} ta tarjima</span>
-      <button
-        v-if="items.length"
-        @click="clearAll"
-        class="text-xs text-red-400 hover:text-red-300 transition-colors"
-      >
-        Tozalash
-      </button>
+      <span class="text-xs" :class="light ? 'text-gray-500' : 'text-slate-400'">{{ items.length }} {{ t('translations') }}</span>
+      <div class="flex gap-2">
+        <button
+          v-if="items.length"
+          @click="doExport"
+          class="text-xs text-emerald-400 hover:text-emerald-300 transition-colors flex items-center gap-1 cursor-pointer"
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" fill="currentColor"/></svg>
+          {{ t('exportBtn') }}
+        </button>
+        <button
+          @click="doImport"
+          class="text-xs text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1 cursor-pointer"
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z" fill="currentColor"/></svg>
+          {{ t('importBtn') }}
+        </button>
+        <button
+          v-if="items.length"
+          @click="clear"
+          class="text-xs text-red-400 hover:text-red-300 transition-colors flex items-center gap-1 cursor-pointer"
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" fill="currentColor"/></svg>
+          {{ t('clear') }}
+        </button>
+      </div>
     </div>
 
-    <div v-if="!items.length" class="text-center text-slate-500 text-sm py-8">
-      Hali tarjimalar yo'q
+    <div v-if="!items.length" class="text-center text-sm py-8" :class="light ? 'text-gray-400' : 'text-slate-500'">
+      {{ t('noHistory') }}
     </div>
 
     <div class="space-y-2">
@@ -21,43 +39,28 @@
         :key="i"
         :item="item"
         @copy="copyText"
-        @speak="speakAny"
+        @speak="speakText"
       />
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onActivated, onMounted } from "vue";
-import { getTtsLang } from "../config.js";
-import { storage } from "../chrome.js";
+import { ref, inject, computed, onActivated, onMounted } from "vue";
+import { t } from "../services/i18n.js";
+import { useTTS } from "../composables/useTTS.js";
+import { useHistory } from "../composables/useHistory.js";
 import TranslationItem from "./TranslationItem.vue";
 
-const items = ref([]);
-
-function loadData() {
-  storage.local.get("history", (result) => {
-    items.value = result.history || [];
-  });
-}
-
-onMounted(loadData);
-onActivated(loadData);
-
-function clearAll() {
-  storage.local.set({ history: [] });
-  items.value = [];
-}
+const theme = inject("theme", ref("dark"));
+const light = computed(() => theme.value === "light");
+const { speakText } = useTTS();
+const { items, load, clear, doExport, doImport } = useHistory();
 
 function copyText(text) {
   navigator.clipboard.writeText(text).catch(() => {});
 }
 
-function speakAny(text, lang) {
-  window.speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = getTtsLang(lang);
-  utterance.rate = 0.9;
-  window.speechSynthesis.speak(utterance);
-}
+onMounted(load);
+onActivated(load);
 </script>

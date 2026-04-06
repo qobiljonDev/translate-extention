@@ -1,7 +1,7 @@
 /** Tooltip UI moduli */
 
-import { getLangName } from "../config.js";
-import { detectTheme, getThemeStyles } from "../utils.js";
+import { getLangName } from "../services/config.js";
+import { detectTheme, getThemeStyles } from "../services/utils.js";
 import state from "./state.js";
 import { speakText } from "./tts.js";
 import { saveToHistory, toggleFavorite, checkIsFavorite } from "./storage.js";

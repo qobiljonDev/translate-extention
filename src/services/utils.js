@@ -1,5 +1,12 @@
-// Re-export config'dan (backward compatibility)
+/**
+ * Umumiy utility funksiyalar
+ * API va Cache services/ papkasiga ko'chirilgan
+ */
+
+// Re-export (backward compatibility)
 export { getLangName, getTtsLang, languages } from "./config.js";
+export { LRUCache as TranslationCache } from "./cache.js";
+export { fetchTranslation } from "./translate.js";
 
 // Debounce
 export function debounce(func, delay) {
@@ -10,7 +17,7 @@ export function debounce(func, delay) {
   };
 }
 
-// Theme detection
+// Theme detection (content script tooltip uchun)
 export function detectTheme(bgColor) {
   const match = bgColor.match(/\d+/g);
   if (match) {
@@ -21,7 +28,7 @@ export function detectTheme(bgColor) {
   return "dark";
 }
 
-// Theme styles
+// Theme styles (content script tooltip uchun)
 export function getThemeStyles(theme) {
   if (theme === "light") {
     return {
@@ -45,59 +52,7 @@ export function getThemeStyles(theme) {
   };
 }
 
-// Translation API call
-export async function fetchTranslation(text, lang) {
-  const response = await fetch(
-    `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${lang}&dt=t&q=${encodeURIComponent(text)}`
-  );
-
-  if (!response.ok) {
-    if (response.status === 429) {
-      return { translated: "Tarjima limitiga yetildi...", detectedLang: "unknown", rateLimited: true };
-    }
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
-
-  const data = await response.json();
-  const translated = data?.[0]?.map((part) => part[0]).join("") || "Tarjima topilmadi";
-  const detectedLang = data?.[2] || "en";
-
-  return { translated, detectedLang };
-}
-
-// Cache with max size (LRU-like)
-export class TranslationCache {
-  constructor(maxSize = 100) {
-    this.cache = new Map();
-    this.maxSize = maxSize;
-  }
-
-  get(key) {
-    return this.cache.get(key);
-  }
-
-  has(key) {
-    return this.cache.has(key);
-  }
-
-  set(key, value) {
-    if (this.cache.size >= this.maxSize) {
-      const firstKey = this.cache.keys().next().value;
-      this.cache.delete(firstKey);
-    }
-    this.cache.set(key, value);
-  }
-
-  get size() {
-    return this.cache.size;
-  }
-
-  clear() {
-    this.cache.clear();
-  }
-}
-
-// Format relative time (Uzbek)
+// Format relative time
 export function formatTime(ts) {
   const diff = Date.now() - ts;
   const min = Math.floor(diff / 60000);

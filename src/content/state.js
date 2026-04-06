@@ -3,7 +3,7 @@
  * Object ichida saqlash — boshqa modullar doim yangi qiymatni ko'radi
  */
 
-import { storage } from "../chrome.js";
+import { storage } from "../services/chrome.js";
 
 const state = {
   targetLang: "uz",

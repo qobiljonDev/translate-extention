@@ -1,7 +1,7 @@
 /** Chrome storage — tarix va sevimlilar */
 
 import state from "./state.js";
-import { storage, runtime } from "../chrome.js";
+import { storage, runtime } from "../services/chrome.js";
 
 const MAX_HISTORY = 200;
 const MAX_FAVORITES = 500;

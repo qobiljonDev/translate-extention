@@ -3,8 +3,8 @@
  * Sahifaga inject bo'ladigan asosiy fayl
  */
 
-import { debounce, isValidSelection } from "../utils.js";
-import { runtime } from "../chrome.js";
+import { debounce, isValidSelection } from "../services/utils.js";
+import { runtime } from "../services/chrome.js";
 import state, { initSettings } from "./state.js";
 import { translateText } from "./translator.js";
 import { showTooltip, hideTooltip, forceHideTooltip } from "./tooltip.js";
