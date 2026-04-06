@@ -24,9 +24,7 @@
         class="absolute right-3 top-1/2 -translate-y-1/2 transition-colors p-1 rounded-full"
         :class="light ? 'text-gray-400 hover:text-gray-700 hover:bg-gray-100' : 'text-slate-500 hover:text-white hover:bg-slate-700/50'"
       >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-          <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill="currentColor"/>
-        </svg>
+        <Icon name="close" :size="14" />
       </button>
     </div>
 
@@ -40,10 +38,7 @@
           ? (light ? 'bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed opacity-70' : 'bg-slate-700/50 text-slate-500 cursor-not-allowed opacity-70')
           : 'bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:from-blue-500 hover:to-blue-400 hover:shadow-lg hover:shadow-blue-500/30 active:scale-[0.97]'"
       >
-        <svg v-if="loading" class="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none">
-          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-linecap="round" class="opacity-25"/>
-          <path d="M12 2a10 10 0 019.95 9" stroke="currentColor" stroke-width="3" stroke-linecap="round" class="opacity-75"/>
-        </svg>
+        <Icon v-if="loading" name="spinner" :size="16" class="animate-spin" />
         {{ loading ? t('translating') : t('translateBtn') }}
       </button>
       <BaseButton
@@ -77,21 +72,15 @@
               :class="light ? 'bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-700' : 'bg-slate-700/60 hover:bg-slate-600/60 text-slate-400 hover:text-white'"
               :title="copied ? t('copied') : t('copy')"
             >
-              <svg v-if="!copied" width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z" fill="currentColor"/>
-              </svg>
-              <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" fill="#4CAF50"/>
-              </svg>
+              <Icon v-if="!copied" name="copy" :size="14" />
+              <Icon v-else name="check" :size="14" class="text-green-500" />
             </button>
             <button
               @click="speakText(translated, selectedLang)"
               class="bg-blue-500/15 hover:bg-blue-500/30 text-blue-400 rounded-lg p-2.5 transition-all duration-200 hover:scale-105"
               :title="t('listen')"
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" fill="currentColor"/>
-              </svg>
+              <Icon name="speaker" :size="14" />
             </button>
           </div>
         </div>
@@ -109,6 +98,7 @@ import { useTranslate } from "../composables/useTranslate.js";
 import { useTTS } from "../composables/useTTS.js";
 import LangDropdown from "./LangDropdown.vue";
 import BaseButton from "./ui/BaseButton.vue";
+import Icon from "./ui/Icon.vue";
 
 const theme = inject("theme", ref("dark"));
 const light = computed(() => theme.value === "light");
