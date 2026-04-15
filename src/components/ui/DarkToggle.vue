@@ -7,7 +7,7 @@ import { computed, nextTick } from "vue";
 
 const props = defineProps({
   modelValue: { type: String, required: true },
-  animationDuration: { type: Number, default: 1000 },
+  animationDuration: { type: Number, default: 1500 },
 });
 const emit = defineEmits(["update:modelValue"]);
 
@@ -59,20 +59,30 @@ async function change(value, event) {
 
   try {
     await transition.ready;
-    const clipPath = [
-      `circle(0px at ${x}px ${y}px)`,
-      `circle(${endRadius}px at ${x}px ${y}px)`,
-    ];
-    const anim = html.animate(
-      { clipPath: goingDark ? clipPath : [...clipPath].reverse() },
-      {
-        duration: props.animationDuration,
-        easing: "cubic-bezier(0.65, 0, 0.35, 1)",
-        pseudoElement: goingDark
-          ? "::view-transition-new(root)"
-          : "::view-transition-old(root)",
-      },
-    );
+    const full = `circle(${endRadius}px at ${x}px ${y}px)`;
+    const zero = `circle(0px at ${x}px ${y}px)`;
+
+    const keyframes = goingDark
+      ? [
+          { clipPath: zero, opacity: 1 },
+          { clipPath: full, opacity: 1 },
+        ]
+      : [
+          { clipPath: full, opacity: 1, offset: 0 },
+          { clipPath: `circle(${endRadius * 0.08}px at ${x}px ${y}px)`, opacity: 1, offset: 0.85 },
+          { clipPath: zero, opacity: 0, offset: 1 },
+        ];
+
+    const anim = html.animate(keyframes, {
+      duration: props.animationDuration,
+      easing: goingDark
+        ? "cubic-bezier(0.83, 0, 0.17, 1)"
+        : "cubic-bezier(0.64, 0, 0.78, 0)",
+      fill: "forwards",
+      pseudoElement: goingDark
+        ? "::view-transition-new(root)"
+        : "::view-transition-old(root)",
+    });
     await anim.finished.catch(() => {});
     await transition.finished.catch(() => {});
   } catch {}
