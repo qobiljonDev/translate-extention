@@ -7,7 +7,7 @@ import { computed, nextTick } from "vue";
 
 const props = defineProps({
   modelValue: { type: String, required: true },
-  animationDuration: { type: Number, default: 1500 },
+  animationDuration: { type: Number, default: 1000 },
 });
 const emit = defineEmits(["update:modelValue"]);
 
