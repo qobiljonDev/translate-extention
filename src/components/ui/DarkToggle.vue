@@ -7,7 +7,7 @@ import { computed, nextTick } from "vue";
 
 const props = defineProps({
   modelValue: { type: String, required: true },
-  animationDuration: { type: Number, default: 1000 },
+  animationDuration: { type: Number, default: 500 },
 });
 const emit = defineEmits(["update:modelValue"]);
 
@@ -69,7 +69,11 @@ async function change(value, event) {
         ]
       : [
           { clipPath: full, opacity: 1, offset: 0 },
-          { clipPath: `circle(${endRadius * 0.08}px at ${x}px ${y}px)`, opacity: 1, offset: 0.85 },
+          {
+            clipPath: `circle(${endRadius * 0.08}px at ${x}px ${y}px)`,
+            opacity: 1,
+            offset: 0.85,
+          },
           { clipPath: zero, opacity: 0, offset: 1 },
         ];
 
