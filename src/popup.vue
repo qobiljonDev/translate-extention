@@ -1,6 +1,6 @@
 <template>
   <div
-    class="h-[450px] flex flex-col font-sans overflow-hidden transition-colors duration-300"
+    class="h-[450px] flex flex-col font-sans overflow-hidden"
     :class="theme === 'light'
       ? 'bg-gradient-to-br from-gray-50 via-gray-100 to-gray-50 text-gray-900'
       : 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white'"

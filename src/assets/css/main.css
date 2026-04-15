@@ -9,13 +9,37 @@ html {
   background: #1e293b;
 }
 
+html.light {
+  background: #f9fafb;
+}
+
 body {
   margin: 0;
   padding: 0;
   width: 400px;
   height: 450px;
   overflow: hidden;
-  background: #1e293b;
+  background: inherit;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+html.vt-to-dark::view-transition-old(root) {
+  z-index: 1;
+}
+html.vt-to-dark::view-transition-new(root) {
+  z-index: 9999;
+}
+
+html.vt-to-light::view-transition-old(root) {
+  z-index: 9999;
+}
+html.vt-to-light::view-transition-new(root) {
+  z-index: 1;
 }
 
 #app {

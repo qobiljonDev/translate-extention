@@ -37,6 +37,11 @@ const translations = {
     offlineCache: "Offline cache",
     clearCache: "Cache tozalash",
     cacheCleared: "Cache tozalandi",
+    siteControl: "Ushbu sayt",
+    disableOnSite: "Bu saytda o'chirish",
+    enableOnSite: "Bu saytda yoqish",
+    siteDisabled: "Tarjima o'chirilgan",
+    siteEnabled: "Tarjima yoqilgan",
   },
   en: {
     translateTab: "Translate",
@@ -71,6 +76,11 @@ const translations = {
     offlineCache: "Offline cache",
     clearCache: "Clear cache",
     cacheCleared: "Cache cleared",
+    siteControl: "This site",
+    disableOnSite: "Disable on this site",
+    enableOnSite: "Enable on this site",
+    siteDisabled: "Translation disabled",
+    siteEnabled: "Translation enabled",
   },
   ru: {
     translateTab: "Перевод",
@@ -105,6 +115,11 @@ const translations = {
     offlineCache: "Офлайн кэш",
     clearCache: "Очистить кэш",
     cacheCleared: "Кэш очищен",
+    siteControl: "Этот сайт",
+    disableOnSite: "Отключить на этом сайте",
+    enableOnSite: "Включить на этом сайте",
+    siteDisabled: "Перевод отключён",
+    siteEnabled: "Перевод включён",
   },
 };
 

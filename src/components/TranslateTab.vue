@@ -28,29 +28,18 @@
       </button>
     </div>
 
-    <!-- Buttons -->
-    <div class="flex gap-3">
-      <button
-        @click="handleTranslate"
-        :disabled="loading || !text.trim()"
-        class="flex-1 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2"
-        :class="loading || !text.trim()
-          ? (light ? 'bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed opacity-70' : 'bg-slate-700/50 text-slate-500 cursor-not-allowed opacity-70')
-          : 'bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:from-blue-500 hover:to-blue-400 hover:shadow-lg hover:shadow-blue-500/30 active:scale-[0.97]'"
-      >
-        <Icon v-if="loading" name="spinner" :size="16" class="animate-spin" />
-        {{ loading ? t('translating') : t('translateBtn') }}
-      </button>
-      <BaseButton
-        class="flex-1"
-        :variant="pageTranslated ? 'danger' : 'success'"
-        size="sm"
-        @click="togglePageTranslate"
-        :title="pageTranslated ? t('restorePage') : t('translatePage')"
-      >
-        {{ pageTranslated ? t('restorePage') : t('translatePage') }}
-      </BaseButton>
-    </div>
+    <!-- Button -->
+    <button
+      @click="handleTranslate"
+      :disabled="loading || !text.trim()"
+      class="w-full px-4 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2"
+      :class="loading || !text.trim()
+        ? (light ? 'bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed opacity-70' : 'bg-slate-700/50 text-slate-500 cursor-not-allowed opacity-70')
+        : 'bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:from-blue-500 hover:to-blue-400 hover:shadow-lg hover:shadow-blue-500/30 active:scale-[0.97]'"
+    >
+      <Icon v-if="loading" name="spinner" :size="16" class="animate-spin" />
+      {{ loading ? t('translating') : t('translateBtn') }}
+    </button>
 
     <!-- Result -->
     <Transition name="result">
@@ -93,11 +82,10 @@
 import { ref, inject, computed, watch } from "vue";
 import { getLangName } from "../services/config.js";
 import { t } from "../services/i18n.js";
-import { storage, runtime } from "../services/chrome.js";
+import { storage } from "../services/chrome.js";
 import { useTranslate } from "../composables/useTranslate.js";
 import { useTTS } from "../composables/useTTS.js";
 import LangDropdown from "./LangDropdown.vue";
-import BaseButton from "./ui/BaseButton.vue";
 import Icon from "./ui/Icon.vue";
 
 const theme = inject("theme", ref("dark"));
@@ -108,7 +96,6 @@ const { text, translated, detectedLang, loading, translate, clear } = useTransla
 const { speakText } = useTTS();
 
 const copied = ref(false);
-const pageTranslated = ref(false);
 
 watch(selectedLang, (val) => {
   storage.sync.set({ targetLang: val });
@@ -116,15 +103,6 @@ watch(selectedLang, (val) => {
 
 function handleTranslate() {
   translate(selectedLang.value);
-}
-
-function togglePageTranslate() {
-  if (pageTranslated.value) {
-    runtime.sendMessage({ action: "restore-page" });
-  } else {
-    runtime.sendMessage({ action: "translate-page" });
-  }
-  pageTranslated.value = !pageTranslated.value;
 }
 
 function handleCopy() {

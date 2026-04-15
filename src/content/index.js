@@ -5,7 +5,7 @@
 
 import { debounce, isValidSelection } from "../services/utils.js";
 import { runtime } from "../services/chrome.js";
-import state, { initSettings } from "./state.js";
+import state, { initSettings, isSiteDisabled } from "./state.js";
 import { translateText } from "./translator.js";
 import { showTooltip, hideTooltip, forceHideTooltip } from "./tooltip.js";
 import { translatePage, restorePage } from "./pageTranslator.js";
@@ -18,12 +18,17 @@ initVoices();
 // === MESSAGE LISTENER ===
 runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.action === "translate-selection") {
+    if (isSiteDisabled()) return;
     const text = message.text || window.getSelection()?.toString().trim();
     if (text && text.length >= 2) {
       handleTranslateRequest(text);
     }
   }
   if (message.action === "translate-page") {
+    if (isSiteDisabled()) {
+      sendResponse({ status: "disabled" });
+      return;
+    }
     translatePage();
     sendResponse({ status: "started" });
   }
@@ -53,6 +58,7 @@ async function handleTranslateRequest(text) {
 
 /** Matn belgilanganda tarjima qilish (debounced) */
 const handleSelection = debounce(async (event) => {
+  if (isSiteDisabled()) return;
   const selection = window.getSelection();
   const selectedText = selection?.toString().trim();
 

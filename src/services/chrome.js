@@ -39,6 +39,18 @@ export const storage = {
   },
 };
 
+export const tabs = {
+  queryActive(callback) {
+    if (isExtension() && chrome.tabs?.query) {
+      chrome.tabs.query({ active: true, currentWindow: true }, (result) => {
+        callback(result?.[0] || null);
+      });
+    } else {
+      callback(null);
+    }
+  },
+};
+
 export const runtime = {
   sendMessage(message) {
     if (isExtension()) {

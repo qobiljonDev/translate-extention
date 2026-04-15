@@ -1,26 +1,33 @@
 // Sahifa tarjima holati (tabId -> boolean)
 const pageTranslatedTabs = {};
 
-// Context menu yaratish
-chrome.runtime.onInstalled.addListener(() => {
-  chrome.contextMenus.create({
-    id: "translate-selection",
-    title: "Tarjima qilish",
-    contexts: ["selection"],
+// Context menu yaratish (idempotent — service worker qayta ishga tushganda ham xavfsiz)
+function createContextMenus() {
+  chrome.contextMenus.removeAll(() => {
+    chrome.contextMenus.create({
+      id: "translate-selection",
+      title: "Tarjima qilish",
+      contexts: ["selection"],
+    });
+    chrome.contextMenus.create({
+      id: "translate-page",
+      title: "Sahifani tarjima qilish",
+      contexts: ["page"],
+    });
   });
-  chrome.contextMenus.create({
-    id: "translate-page",
-    title: "Sahifani tarjima qilish",
-    contexts: ["page"],
-  });
-});
+}
+
+chrome.runtime.onInstalled.addListener(createContextMenus);
+chrome.runtime.onStartup.addListener(createContextMenus);
 
 // Menu ochilganda holatga qarab yangilash
 function updatePageMenu(tabId) {
   const isTranslated = pageTranslatedTabs[tabId];
-  chrome.contextMenus.update("translate-page", {
-    title: isTranslated ? "Asl holatga qaytarish" : "Sahifani tarjima qilish",
-  });
+  chrome.contextMenus.update(
+    "translate-page",
+    { title: isTranslated ? "Asl holatga qaytarish" : "Sahifani tarjima qilish" },
+    () => void chrome.runtime.lastError
+  );
 }
 
 // Context menu bosilganda
