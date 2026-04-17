@@ -3,7 +3,7 @@
   "name": "UZ Hover Translator",
   "version": "1.2",
   "description": "Select and hover text to translate it to Uzbek.",
-  "permissions": ["storage", "contextMenus", "tabs"],
+  "permissions": ["storage", "contextMenus"],
 
   "action": {
     "default_popup": "index.html",
