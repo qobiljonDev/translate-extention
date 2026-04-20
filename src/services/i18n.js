@@ -42,6 +42,7 @@ const translations = {
     enableOnSite: "Bu saytda yoqish",
     siteDisabled: "Tarjima o'chirilgan",
     siteEnabled: "Tarjima yoqilgan",
+    siteHostUnknown: "Sahifani yangilang",
   },
   en: {
     translateTab: "Translate",
@@ -81,6 +82,7 @@ const translations = {
     enableOnSite: "Enable on this site",
     siteDisabled: "Translation disabled",
     siteEnabled: "Translation enabled",
+    siteHostUnknown: "Refresh the page",
   },
   ru: {
     translateTab: "Перевод",
@@ -120,6 +122,7 @@ const translations = {
     enableOnSite: "Включить на этом сайте",
     siteDisabled: "Перевод отключён",
     siteEnabled: "Перевод включён",
+    siteHostUnknown: "Обновите страницу",
   },
 };
 

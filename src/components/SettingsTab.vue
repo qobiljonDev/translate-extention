@@ -24,16 +24,17 @@
     </div>
 
     <!-- Bu sayt -->
-    <div v-if="currentHost">
+    <div>
       <label class="block text-[11px] font-semibold uppercase tracking-wider mb-2.5" :class="light ? 'text-gray-500' : 'text-slate-400'">{{ t('siteControl') }}</label>
       <div
         class="flex items-center gap-2 px-3 py-2 mb-2 rounded-xl"
         :class="light ? 'bg-gray-50 border border-gray-200' : 'bg-slate-800/40 border border-slate-700/40'"
       >
         <Icon name="globe" :size="12" :class="light ? 'text-gray-400' : 'text-slate-500'" />
-        <span class="text-[11px] font-mono truncate" :class="light ? 'text-gray-700' : 'text-slate-300'">{{ currentHost }}</span>
+        <span class="text-[11px] font-mono truncate" :class="light ? 'text-gray-700' : 'text-slate-300'">{{ currentHost || t('siteHostUnknown') }}</span>
       </div>
       <SegmentedControl
+        v-if="currentHost"
         :model-value="isDisabled"
         :options="siteOptions"
         @update:model-value="setSiteDisabled"
@@ -100,6 +101,14 @@ onMounted(() => {
   });
   storage.sync.get("disabledSites", (result) => {
     if (Array.isArray(result.disabledSites)) disabledSites.value = result.disabledSites;
+  });
+  storage.onChanged.addListener((changes, area) => {
+    if (area === "local" && changes.lastActiveHost) {
+      currentHost.value = changes.lastActiveHost.newValue || "";
+    }
+    if (area === "sync" && changes.disabledSites) {
+      disabledSites.value = changes.disabledSites.newValue || [];
+    }
   });
 });
 
