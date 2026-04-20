@@ -4,7 +4,7 @@
  */
 
 import { debounce, isValidSelection } from "../services/utils.js";
-import { runtime } from "../services/chrome.js";
+import { runtime, storage } from "../services/chrome.js";
 import state, { initSettings, isSiteDisabled } from "./state.js";
 import { translateText } from "./translator.js";
 import { showTooltip, hideTooltip, forceHideTooltip } from "./tooltip.js";
@@ -14,6 +14,17 @@ import { initVoices } from "./tts.js";
 // Sozlamalarni yuklash
 initSettings();
 initVoices();
+
+// Joriy hostni storage'ga yozib popup'ga yetkazamiz — tabs/activeTab permission'idan qochish uchun
+function reportHost() {
+  if (location.protocol !== "http:" && location.protocol !== "https:") return;
+  storage.local.set({ lastActiveHost: location.hostname });
+}
+if (document.visibilityState === "visible") reportHost();
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") reportHost();
+});
+window.addEventListener("focus", reportHost);
 
 // === MESSAGE LISTENER ===
 runtime.onMessage.addListener((message, _sender, sendResponse) => {

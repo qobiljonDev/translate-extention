@@ -62,7 +62,7 @@
 import { ref, computed, onMounted } from "vue";
 import { t, currentUILang, setUILang, uiLanguages } from "../services/i18n.js";
 import { clearOfflineCache } from "../services/cache.js";
-import { storage, tabs } from "../services/chrome.js";
+import { storage } from "../services/chrome.js";
 import Icon from "./ui/Icon.vue";
 import SegmentedControl from "./ui/SegmentedControl.vue";
 import DarkToggle from "./ui/DarkToggle.vue";
@@ -95,15 +95,8 @@ const siteOptions = computed(() => [
 ]);
 
 onMounted(() => {
-  tabs.queryActive((tab) => {
-    if (tab?.url) {
-      try {
-        const url = new URL(tab.url);
-        if (url.protocol === "http:" || url.protocol === "https:") {
-          currentHost.value = url.hostname;
-        }
-      } catch {}
-    }
+  storage.local.get("lastActiveHost", (result) => {
+    if (typeof result.lastActiveHost === "string") currentHost.value = result.lastActiveHost;
   });
   storage.sync.get("disabledSites", (result) => {
     if (Array.isArray(result.disabledSites)) disabledSites.value = result.disabledSites;
