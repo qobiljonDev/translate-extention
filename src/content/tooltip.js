@@ -1,7 +1,7 @@
 /** Tooltip UI moduli */
 
 import { getLangName } from "../services/config.js";
-import { detectTheme, getThemeStyles } from "../services/utils.js";
+import { getThemeStyles } from "../services/utils.js";
 import state from "./state.js";
 import { speakText } from "./tts.js";
 import { saveToHistory, toggleFavorite, checkIsFavorite } from "./storage.js";
@@ -25,14 +25,9 @@ function removeTooltip() {
   }
 }
 
-/** Sahifa temasini aniqlash */
+/** Tooltip temasi — popup bilan bir xil */
 function getPageTheme() {
-  if (state.tooltipTheme !== "auto") return state.tooltipTheme;
-  try {
-    const bg = window.getComputedStyle(document.body).backgroundColor;
-    return detectTheme(bg);
-  } catch {}
-  return "dark";
+  return state.theme;
 }
 
 /** SVG tugma yaratish */

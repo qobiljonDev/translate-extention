@@ -9,8 +9,12 @@ export class LRUCache {
     this.maxSize = maxSize;
   }
 
-  get(key) { return this.cache.get(key); }
-  has(key) { return this.cache.has(key); }
+  get(key) {
+    return this.cache.get(key);
+  }
+  has(key) {
+    return this.cache.has(key);
+  }
 
   set(key, value) {
     if (this.cache.size >= this.maxSize) {
@@ -20,8 +24,12 @@ export class LRUCache {
     this.cache.set(key, value);
   }
 
-  get size() { return this.cache.size; }
-  clear() { this.cache.clear(); }
+  get size() {
+    return this.cache.size;
+  }
+  clear() {
+    this.cache.clear();
+  }
 }
 
 // Persistent offline cache (chrome.storage)
